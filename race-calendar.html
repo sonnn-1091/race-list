@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>レースカレンダー</title>
+<style>
+  :root {
+    --c-text: #333;
+    --c-border: #e5e5e5;
+    --c-head-bg: #f2f2f2;
+    --c-sat: #1e88e5;
+    --c-sat-bg: #e9f4fd;
+    --c-sun: #e53935;
+    --c-sun-bg: #fdeceb;
+    --c-selected: #1e88e5;
+    --c-selected-bg: #e9f4fd;
+    --c-jusho: #a08c2a;      /* 重賞 gold */
+    --c-jusho-past: #cfc494; /* faded gold */
+    --c-kaisai: #8a8a8a;     /* 開催 gray */
+    --c-kaisai-past: #c9c9c9;/* faded gray */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--c-text);
+    background: #fff;
+    padding: 16px 12px;
+  }
+
+  /* ---------- header ---------- */
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .nav-btn {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  .nav-btn svg { width: 18px; height: 18px; stroke: #333; stroke-width: 2.5; fill: none; }
+  .nav-btn.prev { margin-right: auto; }
+  .nav-btn.next { margin-left: auto; }
+  .select-wrap { position: relative; }
+  .select-wrap select {
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    padding: 12px 40px 12px 20px;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    min-width: 120px;
+  }
+  .select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 16px; top: 50%;
+    width: 8px; height: 8px;
+    border-right: 2px solid #999;
+    border-bottom: 2px solid #999;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+
+  /* ---------- calendar grid ---------- */
+  table.calendar {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .calendar th, .calendar td {
+    border: 1px solid var(--c-border);
+    text-align: center;
+    vertical-align: top;
+  }
+  .calendar th {
+    background: var(--c-head-bg);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 0;
+  }
+  .calendar th.sat { background: var(--c-sat-bg); color: var(--c-sat); }
+  .calendar th.sun { background: var(--c-sun-bg); color: var(--c-sun); }
+  .calendar td {
+    height: 84px;
+    padding: 8px 2px;
+    position: relative;
+    cursor: default;
+  }
+  .calendar td.clickable { cursor: pointer; }
+  .calendar td .num {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .calendar td.sat .num { color: var(--c-sat); }
+  .calendar td.sun .num { color: var(--c-sun); }
+  .calendar td.selected {
+    outline: 2px solid var(--c-selected);
+    outline-offset: -2px;
+    background: var(--c-selected-bg);
+    z-index: 1;
+  }
+  .calendar td.clickable:active { background: #f0f6fc; }
+
+  /* ---------- badges ---------- */
+  .badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+  .badge.jusho  { background: var(--c-jusho); }
+  .badge.kaisai { background: var(--c-kaisai); }
+  td.past .badge.jusho  { background: var(--c-jusho-past); }
+  td.past .badge.kaisai { background: var(--c-kaisai-past); }
+</style>
+</head>
+<body>
+
+<div class="cal-header">
+  <button class="nav-btn prev" id="btnPrev" aria-label="前の月">
+    <svg viewBox="0 0 24 24"><polyline points="15 4 7 12 15 20"/></svg>
+  </button>
+  <div class="select-wrap">
+    <select id="selYear"><option value="2025" selected>2025年</option></select>
+  </div>
+  <div class="select-wrap">
+    <select id="selMonth">
+      <option value="1">1月</option><option value="2">2月</option>
+      <option value="3" selected>3月</option><option value="4">4月</option>
+      <option value="5">5月</option><option value="6">6月</option>
+      <option value="7">7月</option><option value="8">8月</option>
+      <option value="9">9月</option><option value="10">10月</option>
+      <option value="11">11月</option><option value="12">12月</option>
+    </select>
+  </div>
+  <button class="nav-btn next" id="btnNext" aria-label="次の月">
+    <svg viewBox="0 0 24 24"><polyline points="9 4 17 12 9 20"/></svg>
+  </button>
+</div>
+
+<table class="calendar" id="calendar">
+  <thead>
+    <tr>
+      <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th>
+      <th class="sat">土</th><th class="sun">日</th>
+    </tr>
+  </thead>
+  <tbody id="calBody"><!-- rendered by JS --></tbody>
+</table>
+
+<script>
+/* =========================================================
+ * Race data — replace joCode values with your actual codes.
+ * type: "jusho"(重賞) | "kaisai"(開催) | null(no race)
+ * ========================================================= */
+var YEAR  = 2025;
+var MONTH = 3;
+var TODAY = 12;          // dates before this render with faded badges
+var SELECTED = 12;       // initially selected date
+var JO_CODE = "30";      // racecourse code sent to native
+
+var RACE_DAYS = {
+  1:  "jusho",
+  3:  "kaisai",
+  4:  "kaisai",
+  5:  "kaisai",
+  7:  "kaisai",
+  8:  "jusho",
+  9:  "jusho",
+  12: "jusho",
+  18: "jusho",
+  19: "kaisai",
+  24: "jusho",
+  26: "kaisai",
+  27: "kaisai",
+  29: "jusho"
+};
+
+/* Weekday of day 1 as a column index in a Mon-first grid (0=Mon … 6=Sun).
+   The design places March 1 on Sunday. */
+var FIRST_DAY_COL = 6;
+var DAYS_IN_MONTH = 31;
+
+var BADGE_LABEL = { jusho: "重賞", kaisai: "開催" };
+
+/* ---------- render ---------- */
+function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+function render() {
+  var tbody = document.getElementById("calBody");
+  tbody.innerHTML = "";
+  var day = 1;
+  var totalCells = Math.ceil((FIRST_DAY_COL + DAYS_IN_MONTH) / 7) * 7;
+
+  for (var i = 0; i < totalCells; i += 7) {
+    var tr = document.createElement("tr");
+    for (var col = 0; col < 7; col++) {
+      var cellIndex = i + col;
+      var td = document.createElement("td");
+      if (col === 5) td.classList.add("sat");
+      if (col === 6) td.classList.add("sun");
+
+      if (cellIndex >= FIRST_DAY_COL && day <= DAYS_IN_MONTH) {
+        var d = day++;
+        var num = document.createElement("span");
+        num.className = "num";
+        num.textContent = d;
+        td.appendChild(num);
+
+        if (d < TODAY) td.classList.add("past");
+        if (d === SELECTED) td.classList.add("selected");
+
+        var type = RACE_DAYS[d];
+        if (type) {
+          var b = document.createElement("span");
+          b.className = "badge " + type;
+          b.textContent = BADGE_LABEL[type];
+          td.appendChild(b);
+        }
+
+        td.classList.add("clickable");
+        td.dataset.day = d;
+        td.addEventListener("click", onDateClick);
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+/* ---------- click → native bridge ---------- */
+function onDateClick(e) {
+  var td = e.currentTarget;
+  var d = parseInt(td.dataset.day, 10);
+
+  // update selection highlight
+  var prev = document.querySelector("td.selected");
+  if (prev) prev.classList.remove("selected");
+  td.classList.add("selected");
+  SELECTED = d;
+
+  var params = {
+    joCode: JO_CODE,
+    kaisaibi: YEAR + "-" + pad2(MONTH) + "-" + pad2(d)   // e.g. "2025-03-12"
+  };
+  callNative("raceDateSelected", params);
+}
+
+/**
+ * JS bridge to native app.
+ * Supports iOS WKWebView, Android JavascriptInterface, and a generic fallback.
+ */
+function callNative(fn, params) {
+  try {
+    // iOS: WKWebView message handler
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[fn]) {
+      window.webkit.messageHandlers[fn].postMessage(params);
+      return;
+    }
+    // Android: JavascriptInterface, e.g. addJavascriptInterface(obj, "NativeBridge")
+    if (window.NativeBridge && typeof window.NativeBridge[fn] === "function") {
+      window.NativeBridge[fn](JSON.stringify(params));
+      return;
+    }
+    // Generic global handler injected by the app
+    if (typeof window[fn] === "function") {
+      window[fn](params);
+      return;
+    }
+    console.log("[bridge] " + fn, params); // dev fallback
+  } catch (err) {
+    console.error("[bridge] failed to call " + fn, err);
+  }
+}
+
+/* header controls (static page: hooks left for the app to handle) */
+document.getElementById("btnPrev").addEventListener("click", function () {
+  callNative("monthChanged", { direction: "prev" });
+});
+document.getElementById("btnNext").addEventListener("click", function () {
+  callNative("monthChanged", { direction: "next" });
+});
+
+render();
+</script>
+</body>
+</html>
