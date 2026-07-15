@@ -233,11 +233,12 @@ function render() {
           b.className = "badge " + type;
           b.textContent = BADGE_LABEL[type];
           td.appendChild(b);
-        }
 
-        td.classList.add("clickable");
-        td.dataset.day = d;
-        td.addEventListener("click", onDateClick);
+          // Only days with an event (重賞/開催) are clickable
+          td.classList.add("clickable");
+          td.dataset.day = d;
+          td.addEventListener("click", onDateClick);
+        }
       }
       tr.appendChild(td);
     }
@@ -256,37 +257,37 @@ function onDateClick(e) {
   td.classList.add("selected");
   SELECTED = d;
 
-  var params = {
+  callNative("raceDateSelected", {
     joCode: JO_CODE,
     kaisaibi: YEAR + "-" + pad2(MONTH) + "-" + pad2(d)   // e.g. "2025-03-12"
-  };
-  callNative("raceDateSelected", params);
+  });
 }
 
 /**
- * JS bridge to native app.
- * Supports iOS WKWebView, Android JavascriptInterface, and a generic fallback.
+ * JS bridge to native app — bridge name: "race_list".
+ * Payload shape: { message: "<name>", params: { ... } }
+ * Supports iOS WKWebView, Android JavascriptInterface, and a dev fallback.
  */
-function callNative(fn, params) {
+function callNative(message, params) {
+  var payload = { message: message, params: params };
   try {
-    // iOS: WKWebView message handler
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[fn]) {
-      window.webkit.messageHandlers[fn].postMessage(params);
+    // iOS: WKWebView — userContentController.add(handler, name: "race_list")
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.race_list) {
+      window.webkit.messageHandlers.race_list.postMessage(payload);
       return;
     }
-    // Android: JavascriptInterface, e.g. addJavascriptInterface(obj, "NativeBridge")
-    if (window.NativeBridge && typeof window.NativeBridge[fn] === "function") {
-      window.NativeBridge[fn](JSON.stringify(params));
+    // Android: webView.addJavascriptInterface(bridge, "race_list")
+    if (window.race_list) {
+      if (typeof window.race_list.postMessage === "function") {
+        window.race_list.postMessage(JSON.stringify(payload));
+      } else if (typeof window.race_list[message] === "function") {
+        window.race_list[message](JSON.stringify(params));
+      }
       return;
     }
-    // Generic global handler injected by the app
-    if (typeof window[fn] === "function") {
-      window[fn](params);
-      return;
-    }
-    console.log("[bridge] " + fn, params); // dev fallback
+    console.log("[race_list bridge]", payload); // dev fallback (plain browser)
   } catch (err) {
-    console.error("[bridge] failed to call " + fn, err);
+    console.error("[race_list bridge] failed:", err);
   }
 }
 
