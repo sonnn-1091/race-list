@@ -124,21 +124,22 @@
     background: var(--c-green-bg);
   }
 
-  /* action bar under table */
-  .action-bar {
+  /* action row under table — buttons fit their columns */
+  .horses tfoot td {
     background: var(--c-dark);
-    display: flex; justify-content: flex-end; gap: 8px;
-    padding: 10px;
+    border: 1px solid var(--c-dark);
+    padding: 10px 3px;
   }
-  .action-bar button {
+  .action-row button {
+    display: block; width: 100%;
     border: none; border-radius: 6px;
     font-size: 13px; font-weight: 700;
-    padding: 9px 18px;
+    padding: 9px 0;
   }
   .btn-release { background: #fff; color: #222; }
   .btn-select  { background: #fff; color: #222; }
-  .action-bar button.active { background: var(--c-green); color: #fff; }
-  .action-bar button:disabled { opacity: .35; cursor: default; }
+  .action-row button.active { background: var(--c-green); color: #fff; }
+  .action-row button:disabled { opacity: .35; cursor: default; }
 
   /* ================= 着順を選択 ================= */
   .section { padding: 14px 10px; }
@@ -258,13 +259,15 @@
     </tr>
   </thead>
   <tbody id="horseBody"><!-- rendered by JS --></tbody>
+  <tfoot>
+    <tr class="action-row">
+      <td colspan="4" class="action-spacer"></td>
+      <td><button class="btn-release" data-col="my">解除</button></td>
+      <td><button class="btn-select"  data-col="a">選択</button></td>
+      <td><button class="btn-select"  data-col="b">選択</button></td>
+    </tr>
+  </tfoot>
 </table>
-
-<div class="action-bar">
-  <button class="btn-release" data-col="my">解除</button>
-  <button class="btn-select"  data-col="a">選択</button>
-  <button class="btn-select"  data-col="b">選択</button>
-</div>
 
 <!-- mark picker popup -->
 <div class="mark-popup" id="markPopup">
@@ -459,7 +462,7 @@ document.addEventListener("click", function (e) {
 });
 
 /* ================= action buttons ↔ column selection ================= */
-var actionButtons = document.querySelectorAll(".action-bar button");
+var actionButtons = document.querySelectorAll(".action-row button");
 
 function selectColumn(col) {
   // highlight the chosen column with green background
