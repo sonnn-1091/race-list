@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>金沢 11R</title>
+<style>
+  :root {
+    --c-text: #222;
+    --c-border: #ddd;
+    --c-dark: #111;
+    --c-red: #e5322d;
+    --c-green: #1e9e50;
+    --c-green-bg: #e8f5ec;
+    --c-mark-bg: #f4f1e6;
+    /* 枠番 colors */
+    --waku1: #ffffff;
+    --waku2: #333333;
+    --waku3: #e5322d;
+    --waku4: #2f6fc1;
+    --waku5: #f5c93d;
+    --waku6: #3fa356;
+    --waku7: #ef8232;
+    --waku8: #e87fae;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--c-text);
+    background: transparent;
+    font-size: 14px;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ================= top (dark) area ================= */
+  .top-area { background: var(--c-dark); color: #fff; padding: 10px 10px 0; }
+  .race-title { font-size: 16px; font-weight: 700; }
+  .deadline { color: #ff5a4e; font-weight: 700; font-size: 14px; margin: 2px 0 10px; }
+
+  .bet-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .bet-tab {
+    background: #fff; color: #222;
+    border: 1px solid #fff; border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    padding: 8px 9px; line-height: 1;
+  }
+  .bet-tab.disabled { background: #555; color: #999; border-color: #555; cursor: default; }
+  .bet-tab.active {
+    background: #2b2b2b; color: #fff; border: 1px solid #888;
+    position: relative; padding-left: 22px;
+  }
+  .bet-tab.active::before {
+    content: "✓"; position: absolute; left: 7px; top: 50%;
+    transform: translateY(-50%); font-size: 11px;
+  }
+  .as-of { text-align: right; color: #bbb; font-size: 12px; padding: 4px 2px 6px; }
+
+  /* ================= horse table ================= */
+  table.horses { width: 100%; border-collapse: collapse; background: transparent; }
+  .horses th {
+    background: var(--c-dark); color: #fff;
+    font-size: 11px; font-weight: 600;
+    padding: 6px 2px; border: 1px solid #333;
+    line-height: 1.3;
+  }
+  .horses td { border: 1px solid var(--c-border); padding: 6px 4px; vertical-align: middle; }
+  .col-waku  { width: 26px; }
+  .col-uma   { width: 30px; }
+  .col-odds  { width: 56px; }
+  .col-mark  { width: 52px; }
+
+  td.waku {
+    text-align: center; font-weight: 700; font-size: 14px;
+    border: 1px solid var(--c-border);
+  }
+  td.waku.w1 { background: transparent; color: #222; }
+  td.waku.w2 { background: var(--waku2); color: #fff; }
+  td.waku.w3 { background: var(--waku3); color: #fff; }
+  td.waku.w4 { background: var(--waku4); color: #fff; }
+  td.waku.w5 { background: var(--waku5); color: #222; }
+  td.waku.w6 { background: var(--waku6); color: #fff; }
+  td.waku.w7 { background: var(--waku7); color: #fff; }
+  td.waku.w8 { background: var(--waku8); color: #fff; }
+
+  td.umaban { text-align: center; font-weight: 700; font-size: 15px; }
+  td.horse .name { font-weight: 700; font-size: 14px; }
+  td.horse .jockey { color: #666; font-size: 12px; margin-top: 2px; }
+  td.odds { text-align: right; font-weight: 700; font-size: 15px; padding-right: 8px; }
+  td.odds.hot { color: var(--c-red); }
+
+  td.mark { text-align: center; font-size: 18px; font-weight: 700; }
+  td.mark.editable { cursor: pointer; }
+  td.mark .my-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    background: var(--c-mark-bg);
+    border: 1px solid #e0dccb; border-radius: 6px;
+    font-size: 20px;
+  }
+  /* column selected via bottom buttons */
+  td.mark.col-active { background: var(--c-green-bg); }
+  td.mark.col-active .my-box { background: #f2faf5; border-color: #bfe3cc; }
+
+  /* ---------- mark picker popup ---------- */
+  .mark-popup {
+    position: absolute; z-index: 100;
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.28);
+    padding: 12px;
+    display: none;
+    grid-template-columns: repeat(3, 52px);
+    gap: 10px;
+  }
+  .mark-popup.open { display: grid; }
+  .mark-popup button {
+    width: 52px; height: 52px;
+    background: #fff; border: 1px solid #bbb; border-radius: 10px;
+    font-size: 24px; font-weight: 700; color: #222;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mark-popup button.current {
+    border: 2px solid var(--c-green);
+    color: var(--c-green);
+    background: var(--c-green-bg);
+  }
+
+  /* action bar under table */
+  .action-bar {
+    background: var(--c-dark);
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 10px;
+  }
+  .action-bar button {
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 700;
+    padding: 9px 18px;
+  }
+  .btn-release { background: #fff; color: #222; }
+  .btn-select  { background: #fff; color: #222; }
+  .action-bar button.active { background: var(--c-green); color: #fff; }
+  .action-bar button:disabled { opacity: .35; cursor: default; }
+
+  /* ================= 着順を選択 ================= */
+  .section { padding: 14px 10px; }
+  .section-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .help {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #666; color: #fff; font-size: 13px; font-weight: 700;
+  }
+
+  table.rank-select { width: 100%; border-collapse: collapse; }
+  .rank-select th {
+    background: #f2f2f2; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--c-border); padding: 8px 4px;
+  }
+  .rank-select td {
+    border: 1px solid var(--c-border);
+    text-align: center; padding: 8px 4px; height: 52px;
+  }
+  .rank-select td.sym { font-size: 20px; font-weight: 700; width: 64px; }
+  .rank-select td.on  { background: var(--c-green-bg); }
+
+  /* checkbox looks */
+  .chk {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-size: 18px; font-weight: 700; user-select: none; cursor: pointer;
+  }
+  .chk.checked { background: var(--c-green); color: #fff; }
+  .chk.off     { background: #eee; color: #ccc; border: 1px solid #e0e0e0; }
+
+  /* ================= オッズ一覧 ================= */
+  .odds-header {
+    background: var(--c-dark); color: #fff;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 10px;
+  }
+  .odds-header .title { font-size: 16px; font-weight: 700; }
+  .odds-header .time { color: #bbb; font-size: 12px; flex: 1; }
+  .btn-sort {
+    background: #fff; color: #222; border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 600; padding: 8px 12px;
+  }
+
+  .combo-group { padding: 10px; }
+  .combo-group h3 { font-size: 15px; font-weight: 700; margin: 6px 0 10px; }
+
+  .combo-row {
+    display: flex; align-items: center;
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+    gap: 4px;
+  }
+  .combo { display: flex; align-items: flex-start; gap: 2px; }
+  .num-wrap { display: flex; flex-direction: column; align-items: center; width: 34px; }
+  .num {
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 5px;
+    font-size: 14px; font-weight: 700;
+  }
+  .num.n1 { background: #fff; color: #222; border: 1px solid #999; }
+  .num.n2 { background: var(--waku2); color: #fff; }
+  .num.n3 { background: var(--waku3); color: #fff; }
+  .num-wrap .hname { font-size: 9px; color: #777; margin-top: 2px; white-space: nowrap; }
+  .sep { color: #999; font-weight: 700; margin-top: 5px; }
+
+  .combo-row .odds-val { flex: 1; text-align: right; font-size: 14px; padding-right: 10px; }
+  .combo-row .odds-val b { font-size: 15px; }
+  .combo-row .odds-val.hot b { color: var(--c-red); }
+  .combo-row .odds-val .pop { font-size: 12px; color: #444; }
+
+  .group-foot { display: flex; justify-content: flex-end; padding: 10px 0; }
+  .btn-clear {
+    background: #fff; border: 1px solid #ccc; border-radius: 6px;
+    font-size: 13px; padding: 8px 18px;
+  }
+  .show-all-wrap { display: flex; justify-content: center; padding: 6px 0 2px; }
+  .btn-show-all {
+    background: #fff; color: var(--c-green);
+    border: 1px solid var(--c-green); border-radius: 8px;
+    font-size: 15px; font-weight: 700;
+    padding: 12px 32px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= header / bet types ================= -->
+<div class="top-area">
+  <div class="race-title">金沢 11R</div>
+  <div class="deadline">締切29分前</div>
+  <div class="bet-tabs">
+    <button class="bet-tab">単勝</button>
+    <button class="bet-tab">複勝</button>
+    <button class="bet-tab">枠連</button>
+    <button class="bet-tab disabled">枠単</button>
+    <button class="bet-tab">馬連</button>
+    <button class="bet-tab">馬単</button>
+    <button class="bet-tab">ワイド</button>
+    <button class="bet-tab active">3連複</button>
+    <button class="bet-tab active">3連単</button>
+  </div>
+  <div class="as-of">15:15現在</div>
+</div>
+
+<!-- ================= horse table ================= -->
+<table class="horses">
+  <thead>
+    <tr>
+      <th class="col-waku">枠<br>番</th>
+      <th class="col-uma">馬<br>番</th>
+      <th>馬名<br>騎手名（負担重量）</th>
+      <th class="col-odds">単勝<br>オッズ</th>
+      <th class="col-mark">My<br>予想印</th>
+      <th class="col-mark">予想印<br>A</th>
+      <th class="col-mark">予想印<br>B</th>
+    </tr>
+  </thead>
+  <tbody id="horseBody"><!-- rendered by JS --></tbody>
+</table>
+
+<div class="action-bar">
+  <button class="btn-release" data-col="my">解除</button>
+  <button class="btn-select"  data-col="a">選択</button>
+  <button class="btn-select"  data-col="b">選択</button>
+</div>
+
+<!-- mark picker popup -->
+<div class="mark-popup" id="markPopup">
+  <button data-sym="◎">◎</button>
+  <button data-sym="○">○</button>
+  <button data-sym="▲">▲</button>
+  <button data-sym="△">△</button>
+  <button data-sym="×">×</button>
+  <button data-sym="注">注</button>
+</div>
+
+<!-- ================= 着順を選択 ================= -->
+<div class="section">
+  <div class="section-title">着順を選択 <span class="help">?</span></div>
+  <table class="rank-select">
+    <thead>
+      <tr><th>予想印</th><th>1着</th><th>2着</th><th>3着</th></tr>
+    </thead>
+    <tbody id="rankBody"><!-- rendered by JS --></tbody>
+  </table>
+</div>
+
+<!-- ================= オッズ一覧 ================= -->
+<div class="odds-header">
+  <span class="title">オッズ一覧</span>
+  <span class="time">15:15現在 ⟳</span>
+  <button class="btn-sort">番号順 ↑↓</button>
+</div>
+
+<div class="combo-group">
+  <h3>3連複</h3>
+  <div id="sanrenpuku"><!-- rendered by JS --></div>
+  <div class="group-foot"><button class="btn-clear" data-target="sanrenpuku">クリア</button></div>
+
+  <h3>3連単</h3>
+  <div id="sanrentan"><!-- rendered by JS --></div>
+  <div class="show-all-wrap">
+    <button class="btn-show-all">120組すべて表示</button>
+  </div>
+  <div class="group-foot"><button class="btn-clear" data-target="sanrentan">クリア</button></div>
+</div>
+
+<script>
+/* ================= data ================= */
+var HORSES = [
+  { waku: 1, wakuSpan: 1, uma: 1,  my: "◎", a: "",  b: "◎", odds: "48.2" },
+  { waku: 2, wakuSpan: 1, uma: 2,  my: "▲", a: "◎", b: "",  odds: "48.2" },
+  { waku: 3, wakuSpan: 1, uma: 3,  my: "",  a: "▲", b: "",  odds: "48.2" },
+  { waku: 4, wakuSpan: 1, uma: 4,  my: "△", a: "×", b: "",  odds: "2.9", hot: true },
+  { waku: 5, wakuSpan: 1, uma: 5,  my: "×", a: "",  b: "△", odds: "48.2" },
+  { waku: 6, wakuSpan: 1, uma: 6,  my: "",  a: "",  b: "",  odds: "48.2" },
+  { waku: 7, wakuSpan: 2, uma: 7,  my: "",  a: "○", b: "",  odds: "48.2" },
+  { waku: 7, wakuSpan: 0, uma: 8,  my: "",  a: "",  b: "",  odds: "48.2" },
+  { waku: 8, wakuSpan: 2, uma: 9,  my: "注", a: "",  b: "×", odds: "48.2" },
+  { waku: 8, wakuSpan: 0, uma: 10, my: "",  a: "",  b: "注", odds: "48.2" }
+];
+var HORSE_NAME = "スタールーズベルト";
+var JOCKEY = "山田太郎(56.0)";
+
+/* 着順を選択: state per symbol row — true=green checked, false=gray off */
+var RANK_ROWS = [
+  { sym: "◎", ranks: [true,  true,  true ] },
+  { sym: "○", ranks: [true,  true,  true ] },
+  { sym: "▲", ranks: [true,  true,  true ] },
+  { sym: "△", ranks: [false, true,  true ] },
+  { sym: "×", ranks: [false, false, true ] },
+  { sym: "注", ranks: [false, false, true ] }
+];
+
+/* オッズ一覧 rows */
+var SANRENPUKU = [
+  { odds: "12.0",  pop: "10人気" },
+  { odds: "207.2", pop: "50人気" },
+  { odds: "207.2", pop: "50人気" },
+  { odds: "207.2", pop: "50人気" },
+  { odds: "207.2", pop: "50人気" }
+];
+var SANRENTAN_COUNT = 24; // preview rows before 「120組すべて表示」
+
+/* ================= render: horse table ================= */
+(function renderHorses() {
+  var tbody = document.getElementById("horseBody");
+  HORSES.forEach(function (h) {
+    var tr = document.createElement("tr");
+
+    if (h.wakuSpan > 0) {
+      var wakuTd = document.createElement("td");
+      wakuTd.className = "waku w" + h.waku;
+      wakuTd.rowSpan = h.wakuSpan;
+      wakuTd.textContent = h.waku;
+      tr.appendChild(wakuTd);
+    }
+
+    var umaTd = document.createElement("td");
+    umaTd.className = "umaban";
+    umaTd.textContent = h.uma;
+    tr.appendChild(umaTd);
+
+    var nameTd = document.createElement("td");
+    nameTd.className = "horse";
+    nameTd.innerHTML = '<div class="name">' + HORSE_NAME + '</div>' +
+                       '<div class="jockey">' + JOCKEY + '</div>';
+    tr.appendChild(nameTd);
+
+    var oddsTd = document.createElement("td");
+    oddsTd.className = "odds" + (h.hot ? " hot" : "");
+    oddsTd.textContent = h.odds;
+    tr.appendChild(oddsTd);
+
+    var myTd = document.createElement("td");
+    myTd.className = "mark editable";           // has the rectangle box → opens picker
+    myTd.dataset.col = "my";
+    myTd.innerHTML = '<span class="my-box">' + (h.my || "") + '</span>';
+    tr.appendChild(myTd);
+
+    var aTd = document.createElement("td");
+    aTd.className = "mark";                     // display-only
+    aTd.dataset.col = "a";
+    aTd.textContent = h.a;
+    tr.appendChild(aTd);
+
+    var bTd = document.createElement("td");
+    bTd.className = "mark";                     // display-only
+    bTd.dataset.col = "b";
+    bTd.textContent = h.b;
+    tr.appendChild(bTd);
+
+    tbody.appendChild(tr);
+  });
+})();
+
+/* ================= mark picker popup ================= */
+var popup = document.getElementById("markPopup");
+var popupTarget = null; // the td being edited
+
+function cellSymbol(td) {
+  var box = td.querySelector(".my-box");
+  return (box ? box.textContent : td.textContent).trim();
+}
+function setCellSymbol(td, sym) {
+  var box = td.querySelector(".my-box");
+  if (box) box.textContent = sym;
+  else td.textContent = sym;
+}
+
+function openPopup(td) {
+  popupTarget = td;
+  var current = cellSymbol(td);
+  popup.querySelectorAll("button").forEach(function (b) {
+    b.classList.toggle("current", b.dataset.sym === current && current !== "");
+  });
+  popup.classList.add("open");
+
+  // position near the tapped cell (above if it fits, otherwise below)
+  var r = td.getBoundingClientRect();
+  var pw = popup.offsetWidth, ph = popup.offsetHeight;
+  var left = Math.min(Math.max(8, r.left + r.width / 2 - pw / 2 + window.scrollX),
+                      window.scrollX + document.documentElement.clientWidth - pw - 8);
+  var top = r.top + window.scrollY - ph - 8;
+  if (top < window.scrollY + 8) top = r.bottom + window.scrollY + 8;
+  popup.style.left = left + "px";
+  popup.style.top  = top + "px";
+}
+
+function closePopup() {
+  popup.classList.remove("open");
+  popupTarget = null;
+}
+
+// choose a symbol → fill the cell (tap the same symbol again to clear)
+popup.querySelectorAll("button").forEach(function (b) {
+  b.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (!popupTarget) return;
+    var sym = b.dataset.sym;
+    setCellSymbol(popupTarget, cellSymbol(popupTarget) === sym ? "" : sym);
+    closePopup();
+  });
+});
+
+// tap a symbol cell → open popup
+document.getElementById("horseBody").addEventListener("click", function (e) {
+  var td = e.target.closest("td.mark.editable");
+  if (!td) return;
+  e.stopPropagation();
+  openPopup(td);
+});
+
+// tap anywhere else → close
+document.addEventListener("click", function (e) {
+  if (popup.classList.contains("open") && !popup.contains(e.target)) closePopup();
+});
+
+/* ================= action buttons ↔ column selection ================= */
+var actionButtons = document.querySelectorAll(".action-bar button");
+
+function selectColumn(col) {
+  // highlight the chosen column with green background
+  document.querySelectorAll("td.mark").forEach(function (td) {
+    td.classList.toggle("col-active", td.dataset.col === col);
+  });
+  // the clicked button stays active; the other two are disabled
+  actionButtons.forEach(function (b) {
+    var isThis = b.dataset.col === col;
+    b.classList.toggle("active", isThis);
+    b.disabled = !isThis;
+  });
+}
+
+function releaseColumns() {
+  document.querySelectorAll("td.mark").forEach(function (td) {
+    td.classList.remove("col-active");
+  });
+  actionButtons.forEach(function (b) {
+    b.classList.remove("active");
+    b.disabled = false;
+  });
+}
+
+actionButtons.forEach(function (b) {
+  b.addEventListener("click", function () {
+    if (b.classList.contains("active")) releaseColumns(); // tap active button again to release
+    else selectColumn(b.dataset.col);
+  });
+});
+
+// initial state matches the screenshot: 解除 active, My予想印 column highlighted
+selectColumn("my");
+
+/* ================= render: 着順を選択 ================= */
+(function renderRankSelect() {
+  var tbody = document.getElementById("rankBody");
+  RANK_ROWS.forEach(function (row) {
+    var tr = document.createElement("tr");
+    var sym = document.createElement("td");
+    sym.className = "sym";
+    sym.textContent = row.sym;
+    tr.appendChild(sym);
+
+    row.ranks.forEach(function (on) {
+      var td = document.createElement("td");
+      if (on) td.classList.add("on");
+      var chk = document.createElement("span");
+      chk.className = "chk " + (on ? "checked" : "off");
+      chk.textContent = "✓";
+      chk.addEventListener("click", function () {
+        var nowOn = chk.classList.toggle("checked");
+        chk.classList.toggle("off", !nowOn);
+        td.classList.toggle("on", nowOn);
+      });
+      td.appendChild(chk);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+})();
+
+/* ================= render: combo rows ================= */
+function comboHTML(sep) {
+  return (
+    '<span class="combo">' +
+      '<span class="num-wrap"><span class="num n1">1</span><span class="hname">スター</span></span>' +
+      '<span class="sep">' + sep + '</span>' +
+      '<span class="num-wrap"><span class="num n2">2</span><span class="hname">スター</span></span>' +
+      '<span class="sep">' + sep + '</span>' +
+      '<span class="num-wrap"><span class="num n3">3</span><span class="hname">スター</span></span>' +
+    '</span>'
+  );
+}
+
+function makeComboRow(sep, odds, pop, hot, checked) {
+  var row = document.createElement("div");
+  row.className = "combo-row";
+  row.innerHTML =
+    comboHTML(sep) +
+    '<span class="odds-val' + (hot ? " hot" : "") + '">' +
+      '<b>' + odds + '</b> <span class="pop">（' + pop + '）</span>' +
+    '</span>';
+
+  var chk = document.createElement("span");
+  chk.className = "chk " + (checked ? "checked" : "off");
+  chk.textContent = "✓";
+  chk.addEventListener("click", function () {
+    var nowOn = chk.classList.toggle("checked");
+    chk.classList.toggle("off", !nowOn);
+  });
+  row.appendChild(chk);
+  return row;
+}
+
+(function renderCombos() {
+  var puku = document.getElementById("sanrenpuku");
+  SANRENPUKU.forEach(function (r) {
+    puku.appendChild(makeComboRow("-", r.odds, r.pop, false, true));
+  });
+
+  var tan = document.getElementById("sanrentan");
+  for (var i = 0; i < SANRENTAN_COUNT; i++) {
+    if (i === 0)      tan.appendChild(makeComboRow(">", "3.0",   "1人気",  true,  true));
+    else if (i === 1) tan.appendChild(makeComboRow(">", "12.0",  "10人気", false, true));
+    else              tan.appendChild(makeComboRow(">", "207.2", "50人気", false, true));
+  }
+})();
+
+/* ================= クリア: check/uncheck all in the section ================= */
+document.querySelectorAll(".btn-clear").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var section = document.getElementById(btn.dataset.target);
+    if (!section) return;
+    var checks = section.querySelectorAll(".chk");
+    // if any box is checked → uncheck all (clear); if none checked → check all
+    var anyChecked = section.querySelector(".chk.checked") !== null;
+    checks.forEach(function (chk) {
+      chk.classList.toggle("checked", !anyChecked);
+      chk.classList.toggle("off", anyChecked);
+    });
+  });
+});
+</script>
+</body>
+</html>
