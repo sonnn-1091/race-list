@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>競技場一覧</title>
+<style>
+  :root {
+    --c-text: #222;
+    --c-divider: #e6e6e6;
+    --c-arrow: #333;
+    --c-tap: #f5f5f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--c-text);
+    background: #fff;
+  }
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    padding: 22px 20px 16px;
+  }
+
+  .venue-list { list-style: none; border-top: 1px solid var(--c-divider); }
+
+  .venue-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 20px;
+    border-bottom: 1px solid var(--c-divider);
+    cursor: pointer;
+    background: #fff;
+  }
+  .venue-row:active { background: var(--c-tap); }
+
+  .venue-name { font-size: 20px; font-weight: 700; }
+
+  .venue-row svg {
+    width: 18px; height: 18px;
+    stroke: var(--c-arrow);
+    stroke-width: 2.6;
+    fill: none;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<h2 class="section-title">開催中の競技場</h2>
+<ul class="venue-list" id="listOpen"><!-- rendered by JS --></ul>
+
+<h2 class="section-title">その他の競技場</h2>
+<ul class="venue-list" id="listOther"><!-- rendered by JS --></ul>
+
+<script>
+/* =========================================================
+ * Venue data
+ * ========================================================= */
+var CALENDAR_URL = "https://sonnn-1091.github.io/race-list/race-calendar";
+
+var VENUES_OPEN  = ["盛岡", "名古屋", "園田", "笠松", "金沢"];
+var VENUES_OTHER = ["水沢", "帯広"];
+
+var ARROW_SVG = '<svg viewBox="0 0 24 24"><polyline points="9 4 17 12 9 20"/></svg>';
+
+function renderList(containerId, names) {
+  var ul = document.getElementById(containerId);
+  names.forEach(function (name) {
+    var li = document.createElement("li");
+    li.className = "venue-row";
+    li.innerHTML = '<span class="venue-name">' + name + '</span>' + ARROW_SVG;
+    li.addEventListener("click", function () {
+      // navigate to the race calendar page
+      window.location.href = CALENDAR_URL;
+    });
+    ul.appendChild(li);
+  });
+}
+
+renderList("listOpen", VENUES_OPEN);
+renderList("listOther", VENUES_OTHER);
+</script>
+</body>
+</html>

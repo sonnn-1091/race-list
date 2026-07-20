@@ -259,7 +259,7 @@ function onDateClick(e) {
 
   callNative("raceDateSelected", {
     joCode: JO_CODE,
-    kaisaibi: YEAR + "-" + pad2(MONTH) + "-" + pad2(d)   // e.g. "2025-03-12"
+    kaisaibi: YEAR + pad2(MONTH) + pad2(d)   // e.g. "20260707"
   });
 }
 
