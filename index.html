@@ -882,6 +882,54 @@ var matomeHeader = document.getElementById("btnMatomeHeader");
 var matomeFooter = document.getElementById("btnMatomeFooter");
 if (matomeHeader) matomeHeader.addEventListener("click", goToMatome);
 if (matomeFooter) matomeFooter.addEventListener("click", goToMatome);
+
+/* =========================================================
+ * Race action / link buttons → odds-sop deep links
+ * Maps each button label to its screenId; raceNo is read
+ * from the row the button belongs to.
+ * ========================================================= */
+var JO_CD     = "03";
+var KAISAI_BI = "20260721";
+
+/* button label (normalized, no <br>/whitespace) → screenId */
+var SCREEN_ID_BY_LABEL = {
+  "出走表":   "CA106-02",
+  "オッズ":   "CA107-01",
+  "レース映像": "CA110-01",
+  "結果":     "CA111-01",
+  "投票":     "CA109-01"
+};
+
+function raceNoFromButton(el) {
+  var row = el.closest(".race-row");
+  if (!row) return "";
+  var noEl = row.querySelector(".race-no");
+  if (!noEl) return "";
+  var m = noEl.textContent.match(/\d+/);   // "11R" → "11"
+  return m ? m[0] : "";
+}
+
+function buildRaceUrl(screenId, raceNo) {
+  return "odds-sop://notification?action=1"
+       + "&screenId=" + screenId
+       + "&joCd=" + JO_CD
+       + "&raceNo=" + raceNo
+       + "&kaisaiBi=" + KAISAI_BI;
+}
+
+document.querySelector(".race-list").addEventListener("click", function (e) {
+  var btn = e.target.closest(".btn-action, .btn-link");
+  if (!btn) return;
+  if (btn.classList.contains("disabled")) return;   // greyed-out buttons do nothing
+
+  // normalize label: strip <br> line breaks and whitespace (e.g. "レース\n映像" → "レース映像")
+  var label = btn.textContent.replace(/\s+/g, "");
+  var screenId = SCREEN_ID_BY_LABEL[label];
+  if (!screenId) return;                             // e.g. 予想情報 has no mapping → ignore
+
+  e.preventDefault();
+  window.location.href = buildRaceUrl(screenId, raceNoFromButton(btn));
+});
 </script>
 
 </body>
