@@ -413,9 +413,8 @@
   <!-- Header -->
   <header class="page-header">
     <h1>盛岡レース一覧</h1>
-    <a href="#" class="btn-matome">レースまとめ投票</a>
+    <a href="#" class="btn-matome" id="btnMatomeHeader">レースまとめ投票</a>
   </header>
-
   <!-- Date bar -->
   <div class="date-bar">
     <div class="date-left">
@@ -749,9 +748,8 @@
 
   <!-- Footer button -->
   <div class="footer-vote">
-    <a href="#" class="btn-matome">レースまとめ投票</a>
+    <a href="#" class="btn-matome" id="btnMatomeFooter">レースまとめ投票</a>
   </div>
-
   <!-- Bridge log debug tool -->
   <button class="debug-fab" id="debugFab" aria-label="ブリッジ送信ログ">
     📋<span class="badge-count" id="debugBadge">0</span>
@@ -775,7 +773,7 @@
  * Native bridge — bridge name: "race_list"
  * Calendar button → showModalUrl { url, title? }
  * ========================================================= */
-var CALENDAR_URL   = "https://sonnn-1091.github.io/race-list/stadium"; // replace with the actual calendar page URL
+var CALENDAR_URL   = "https://sonnn-1091.github.io/race-list/race-calendar"; // replace with the actual calendar page URL
 var CALENDAR_TITLE = "開催日選択";           // optional modal title
 
 /**
@@ -870,6 +868,20 @@ document.getElementById("debugClear").addEventListener("click", function () {
   updateDebugBadge();
 });
 
+/* =========================================================
+ * レースまとめ投票 button → deep link navigation
+ * ========================================================= */
+var MATOME_URL = "odds-sop://notification?action=1&screenId=CA109-81&joCd=03&raceNo=11&kaisaiBi=20260721";
+
+function goToMatome(e) {
+  e.preventDefault();
+  window.location.href = MATOME_URL;
+}
+
+var matomeHeader = document.getElementById("btnMatomeHeader");
+var matomeFooter = document.getElementById("btnMatomeFooter");
+if (matomeHeader) matomeHeader.addEventListener("click", goToMatome);
+if (matomeFooter) matomeFooter.addEventListener("click", goToMatome);
 </script>
 
 </body>
