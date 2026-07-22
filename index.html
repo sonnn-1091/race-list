@@ -428,7 +428,7 @@
         </svg>
       </button>
     </div>
-    <button type="button" class="btn-switch">
+    <button type="button" class="btn-switch" id="btnSwitchPayout">
       払戻金一覧に切替
       <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="17 1 21 5 17 9"></polyline>
@@ -773,7 +773,7 @@
  * Native bridge — bridge name: "race_list"
  * Calendar button → showModalUrl { url, title? }
  * ========================================================= */
-var CALENDAR_URL   = "https://sonnn-1091.github.io/race-list/stadium"; // replace with the actual calendar page URL
+var CALENDAR_URL   = "https://sonnn-1091.github.io/race-list/stadium";
 var CALENDAR_TITLE = "開催日選択";           // optional modal title
 
 /**
@@ -895,6 +895,7 @@ var KAISAI_BI = "20260721";
 var SCREEN_ID_BY_LABEL = {
   "出走表":   "CA106-02",
   "オッズ":   "CA107-01",
+  "予想情報": "CA108-01",
   "レース映像": "CA110-01",
   "結果":     "CA111-01",
   "投票":     "CA109-01"
@@ -930,6 +931,19 @@ document.querySelector(".race-list").addEventListener("click", function (e) {
   e.preventDefault();
   window.location.href = buildRaceUrl(screenId, raceNoFromButton(btn));
 });
+
+/* =========================================================
+ * 払戻金一覧に切替 button → deep link (no raceNo)
+ * ========================================================= */
+var PAYOUT_URL = "odds-sop://notification?action=1&screenId=CA104-02&joCd=03&kaisaiBi=20260721";
+
+var btnSwitchPayout = document.getElementById("btnSwitchPayout");
+if (btnSwitchPayout) {
+  btnSwitchPayout.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location.href = PAYOUT_URL;
+  });
+}
 </script>
 
 </body>
