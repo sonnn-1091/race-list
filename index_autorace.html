@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盛岡レース一覧</title>
+<style>
+  :root {
+    --orange: #f07119;
+    --orange-dark: #d95f0a;
+    --gold: #a08829;
+    --text: #222222;
+    --gray-text: #999999;
+    --gray-border: #cccccc;
+    --gray-disabled: #c8c8c8;
+    --red: #e53030;
+    --divider: #e5e5e5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    color: var(--text);
+    background: #ffffff;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 32px;
+  }
+
+  /* ---------- Page header ---------- */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-matome {
+    flex-shrink: 0;
+    display: inline-block;
+    background: var(--orange);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    padding: 12px 22px;
+    border-radius: 8px;
+    box-shadow: 0 2px 0 var(--orange-dark);
+    border: none;
+    cursor: pointer;
+  }
+  .btn-matome:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--orange-dark); }
+
+  /* ---------- Date bar ---------- */
+  .date-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .date-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .date-text {
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .btn-calendar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+  }
+  .btn-calendar svg { width: 22px; height: 22px; stroke: #333; }
+
+  .btn-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    padding: 11px 14px;
+    cursor: pointer;
+  }
+  .btn-switch svg { width: 18px; height: 18px; }
+
+  /* ---------- Legend ---------- */
+  .legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .badge-jusho {
+    display: inline-block;
+    background: var(--gold);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .icon-night {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: #3f51b5;
+  }
+  .icon-night svg { width: 14px; height: 14px; fill: #ffd54f; }
+
+  /* ---------- Race rows ---------- */
+  .race-list { list-style: none; }
+
+  .race-row {
+    display: flex;
+    align-items: stretch;
+    padding: 22px 0;
+  }
+  .race-row + .race-row { border-top: 1px solid var(--divider); }
+
+  .race-left {
+    flex: 0 0 92px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    padding-right: 12px;
+    border-right: 1px solid var(--divider);
+    text-align: center;
+  }
+
+  .race-no {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .race-status { font-size: 14px; font-weight: 600; color: var(--gray-text); }
+  .race-status.selling { color: var(--text); }
+  .race-deadline { font-size: 14px; font-weight: 700; color: var(--text); }
+  .race-deadline.soon { color: var(--red); }
+
+  .race-main {
+    flex: 1;
+    min-width: 0;
+    padding-left: 14px;
+  }
+
+  .race-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .race-titles { min-width: 0; }
+
+  .race-title {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+
+  .race-cond {
+    font-size: 14px;
+    color: #555555;
+  }
+
+  /* Action buttons (right of title) */
+  .btn-action {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    padding: 12px 10px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-vote {
+    background: var(--orange);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 0 var(--orange-dark);
+  }
+  .btn-vote:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--orange-dark); }
+
+  .btn-result {
+    background: #ffffff;
+    color: var(--orange);
+    border: 2px solid var(--orange);
+  }
+
+  .btn-scheduled {
+    background: #e9e9e9;
+    color: #aaaaaa;
+    border: none;
+    cursor: default;
+    pointer-events: none;
+    font-size: 15px;
+  }
+
+  /* Link buttons row */
+  .link-btns {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-link {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 48px;
+    padding: 6px 4px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    background: #ffffff;
+    border: 1px solid #999999;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-link:active { background: #f5f5f5; }
+
+  .btn-link.disabled {
+    color: var(--gray-disabled);
+    border-color: #dddddd;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  /* ---------- Footer ---------- */
+  .footer-vote {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 28px;
+  }
+  .footer-vote .btn-matome { padding: 14px 26px; }
+
+  @media (max-width: 400px) {
+    .race-left { flex: 0 0 80px; }
+    .btn-action { min-width: 84px; }
+    .btn-link { font-size: 13px; }
+  }
+
+  /* ---------- Bridge log debug tool ---------- */
+  .debug-fab {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #222222;
+    color: #ffffff;
+    border: none;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 9998;
+  }
+  .debug-fab .badge-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    display: none;
+  }
+  .debug-fab .badge-count.show { display: block; }
+
+  .debug-panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    max-height: 70vh;
+    background: #ffffff;
+    border-top: 1px solid var(--gray-border);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+    z-index: 9999;
+  }
+  .debug-panel.open { transform: translateY(0); }
+
+  .debug-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--divider);
+    flex-shrink: 0;
+  }
+  .debug-panel-header h2 { font-size: 15px; font-weight: 700; }
+  .debug-panel-header .actions { display: flex; gap: 8px; }
+  .debug-panel-header button {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-border);
+    background: #fff;
+    cursor: pointer;
+  }
+  .debug-panel-header .btn-close { color: #fff; background: #222; border-color: #222; }
+
+  .debug-log-list {
+    overflow-y: auto;
+    padding: 8px 16px 20px;
+    flex: 1;
+  }
+  .debug-empty {
+    color: var(--gray-text);
+    font-size: 13px;
+    text-align: center;
+    padding: 30px 0;
+  }
+  .debug-entry {
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .debug-entry .entry-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .debug-entry .entry-message {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--orange-dark);
+  }
+  .debug-entry .entry-time {
+    color: var(--gray-text);
+    font-size: 11px;
+  }
+  .debug-entry pre {
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1>盛岡レース一覧</h1>
+    <a href="#" class="btn-matome" id="btnMatomeHeader">レースまとめ投票</a>
+  </header>
+  <!-- Date bar -->
+  <div class="date-bar">
+    <div class="date-left">
+      <span class="date-text">2022年12月12日</span>
+      <button type="button" class="btn-calendar" id="btnCalendar" aria-label="カレンダーを開く">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+    </div>
+    <button type="button" class="btn-switch" id="btnSwitchPayout">
+      払戻金一覧に切替
+      <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 1 21 5 17 9"></polyline>
+        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+        <polyline points="7 23 3 19 7 15"></polyline>
+        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="badge-jusho">重賞</span>
+    <span class="icon-night" aria-label="ナイター開催">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+    </span>
+  </div>
+
+  <!-- Race list -->
+  <ul class="race-list">
+
+    <!-- 1R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">1R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status">確定</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-result">結果</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <a href="#" class="btn-link">レース<br>映像</a>
+        </div>
+      </div>
+    </li>
+
+    <!-- 2R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">2R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status">確定</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-result">結果</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <a href="#" class="btn-link">レース<br>映像</a>
+        </div>
+      </div>
+    </li>
+
+    <!-- 3R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">3R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status">確定</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-result">結果</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <a href="#" class="btn-link">レース<br>映像</a>
+        </div>
+      </div>
+    </li>
+
+    <!-- 4R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">4R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline soon">締切30分前</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 5R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">5R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 6R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">6R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 7R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">7R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 8R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">8R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 9R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">9R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 10R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">10R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status selling">発売中</span>
+        <span class="race-deadline">11:11締切</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <a href="#" class="btn-action btn-vote">投票</a>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <a href="#" class="btn-link">オッズ</a>
+          <a href="#" class="btn-link">予想情報</a>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 11R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">11R</span>
+        <span class="race-status">予定</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <span class="btn-action btn-scheduled">開催予定</span>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <span class="btn-link disabled">オッズ</span>
+          <span class="btn-link disabled">予想情報</span>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 12R -->
+    <li class="race-row">
+      <div class="race-left">
+        <span class="race-no">12R</span>
+        <span class="badge-jusho">重賞</span>
+        <span class="race-status">予定</span>
+      </div>
+      <div class="race-main">
+        <div class="race-head">
+          <div class="race-titles">
+            <p class="race-title">C−2−12組C2ファイナルレースナントカ杯</p>
+            <p class="race-cond">ダ 1400m 右回り 8頭</p>
+          </div>
+          <span class="btn-action btn-scheduled">開催予定</span>
+        </div>
+        <div class="link-btns">
+          <a href="#" class="btn-link">出走表</a>
+          <span class="btn-link disabled">オッズ</span>
+          <span class="btn-link disabled">予想情報</span>
+          <span class="btn-link disabled">レース<br>映像</span>
+        </div>
+      </div>
+    </li>
+
+  </ul>
+
+  <!-- Footer button -->
+  <div class="footer-vote">
+    <a href="#" class="btn-matome" id="btnMatomeFooter">レースまとめ投票</a>
+  </div>
+  <!-- Bridge log debug tool -->
+  <button class="debug-fab" id="debugFab" aria-label="ブリッジ送信ログ">
+    📋<span class="badge-count" id="debugBadge">0</span>
+  </button>
+
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-panel-header">
+      <h2>送信ログ（race_list）</h2>
+      <div class="actions">
+        <button type="button" id="debugClear">クリア</button>
+        <button type="button" class="btn-close" id="debugCloseBtn">閉じる</button>
+      </div>
+    </div>
+    <div class="debug-log-list" id="debugLogList">
+      <div class="debug-empty" id="debugEmpty">まだ送信はありません</div>
+    </div>
+  </div>
+
+<script>
+/* =========================================================
+ * Native bridge — bridge name: "race_list"
+ * Calendar button → showModalUrl { url, title? }
+ * ========================================================= */
+var CALENDAR_URL   = "https://sonnn-1091.github.io/race-list/stadium";
+var CALENDAR_TITLE = "開催日選択";           // optional modal title
+
+/**
+ * Sends a message to the native app through the "race_list" bridge.
+ * Payload shape: { message: "<name>", params: { ... } }
+ * Uses the flutter_inappwebview handler, with a dev console fallback.
+ */
+function callNative(message, params) {
+  var payload = { message: message, params: params };
+  logBridgeSend(payload); // record for the on-screen debug panel
+  try {
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      window.flutter_inappwebview.callHandler('race_list', payload);
+      return;
+    }
+    console.log("[race_list bridge]", payload); // dev fallback (plain browser)
+  } catch (err) {
+    console.error("[race_list bridge] failed:", err);
+  }
+}
+
+document.getElementById("btnCalendar").addEventListener("click", function () {
+  callNative("showModalUrl", {
+    url: CALENDAR_URL,
+    title: CALENDAR_TITLE   // optional — omit this line if no title is needed
+  });
+});
+
+/* =========================================================
+ * Bridge log debug tool
+ * Floating button shows every payload sent through callNative(),
+ * newest first, so you can verify what was actually sent.
+ * ========================================================= */
+var bridgeLog = [];
+
+function logBridgeSend(payload) {
+  bridgeLog.unshift({
+    time: new Date(),
+    message: payload.message,
+    params: payload.params
+  });
+  renderBridgeLog();
+  updateDebugBadge();
+}
+
+function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+function formatTime(d) {
+  return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+}
+
+function renderBridgeLog() {
+  var list = document.getElementById("debugLogList");
+  var empty = document.getElementById("debugEmpty");
+  list.innerHTML = "";
+
+  if (bridgeLog.length === 0) {
+    list.appendChild(empty);
+    return;
+  }
+
+  bridgeLog.forEach(function (entry) {
+    var el = document.createElement("div");
+    el.className = "debug-entry";
+    el.innerHTML =
+      '<div class="entry-top">' +
+        '<span class="entry-message">' + entry.message + '</span>' +
+        '<span class="entry-time">' + formatTime(entry.time) + '</span>' +
+      '</div>' +
+      '<pre></pre>';
+    el.querySelector("pre").textContent = JSON.stringify(entry.params, null, 2);
+    list.appendChild(el);
+  });
+}
+
+function updateDebugBadge() {
+  var badge = document.getElementById("debugBadge");
+  badge.textContent = bridgeLog.length;
+  badge.classList.toggle("show", bridgeLog.length > 0);
+}
+
+var debugPanel = document.getElementById("debugPanel");
+document.getElementById("debugFab").addEventListener("click", function () {
+  debugPanel.classList.add("open");
+});
+document.getElementById("debugCloseBtn").addEventListener("click", function () {
+  debugPanel.classList.remove("open");
+});
+document.getElementById("debugClear").addEventListener("click", function () {
+  bridgeLog = [];
+  renderBridgeLog();
+  updateDebugBadge();
+});
+
+/* =========================================================
+ * レースまとめ投票 button → deep link navigation
+ * ========================================================= */
+var MATOME_URL = "odds-sop://notification?action=1&screenId=CA509-62&joCd=03&raceNo=11&kaisaiBi=20260721";
+
+function goToMatome(e) {
+  e.preventDefault();
+  window.location.href = MATOME_URL;
+}
+
+var matomeHeader = document.getElementById("btnMatomeHeader");
+var matomeFooter = document.getElementById("btnMatomeFooter");
+if (matomeHeader) matomeHeader.addEventListener("click", goToMatome);
+if (matomeFooter) matomeFooter.addEventListener("click", goToMatome);
+
+/* =========================================================
+ * Race action / link buttons → odds-sop deep links
+ * Maps each button label to its screenId; raceNo is read
+ * from the row the button belongs to.
+ * ========================================================= */
+var JO_CD     = "03";
+var KAISAI_BI = "20260721";
+
+/* button label (normalized, no <br>/whitespace) → screenId */
+var SCREEN_ID_BY_LABEL = {
+  "出走表":   "CA506-01",
+  "オッズ":   "CA507-01",
+  "予想情報": "CA508-01",
+  "レース映像": "CA510-01",
+  "結果":     "CA511-01",
+  "投票":     "CA509-01"
+};
+
+function raceNoFromButton(el) {
+  var row = el.closest(".race-row");
+  if (!row) return "";
+  var noEl = row.querySelector(".race-no");
+  if (!noEl) return "";
+  var m = noEl.textContent.match(/\d+/);   // "11R" → "11"
+  return m ? m[0] : "";
+}
+
+function buildRaceUrl(screenId, raceNo) {
+  return "odds-sop://notification?action=1"
+       + "&screenId=" + screenId
+       + "&joCd=" + JO_CD
+       + "&raceNo=" + raceNo
+       + "&kaisaiBi=" + KAISAI_BI;
+}
+
+document.querySelector(".race-list").addEventListener("click", function (e) {
+  var btn = e.target.closest(".btn-action, .btn-link");
+  if (!btn) return;
+  if (btn.classList.contains("disabled")) return;   // greyed-out buttons do nothing
+
+  // normalize label: strip <br> line breaks and whitespace (e.g. "レース\n映像" → "レース映像")
+  var label = btn.textContent.replace(/\s+/g, "");
+  var screenId = SCREEN_ID_BY_LABEL[label];
+  if (!screenId) return;                             // e.g. 予想情報 has no mapping → ignore
+
+  e.preventDefault();
+  window.location.href = buildRaceUrl(screenId, raceNoFromButton(btn));
+});
+
+/* =========================================================
+ * 払戻金一覧に切替 button → deep link (no raceNo)
+ * ========================================================= */
+var PAYOUT_URL = "odds-sop://notification?action=1&screenId=CA504-02&joCd=03&kaisaiBi=20260721";
+
+var btnSwitchPayout = document.getElementById("btnSwitchPayout");
+if (btnSwitchPayout) {
+  btnSwitchPayout.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location.href = PAYOUT_URL;
+  });
+}
+</script>
+
+</body>
+</html>
